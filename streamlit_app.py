@@ -4,7 +4,6 @@ from streamlit_gsheets import GSheetsConnection
 
 # Establish connection to Google Sheets
 conn = st.connection("gsheets", type=GSheetsConnection)
-
 # Read data from the USERDATA worksheet
 data = conn.read(worksheet="USERDATA")
 
