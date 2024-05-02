@@ -4,25 +4,32 @@ from streamlit_gsheets import GSheetsConnection
 
 # Establish connection to Google Sheets
 conn = st.connection("gsheets", type=GSheetsConnection)
+
 # Read data from the USERDATA worksheet
 data = conn.read(worksheet="USERDATA")
+data_filtered = data.dropna(subset=["PATIENT_NAME"])
 
 # Display the original data
-sql=''' select 
-              "TOKEN_NO",
-              "CURR_DATE",
-              "PATIENT_NAME",
-              "CURR_CONDITION",
-              "AI_RESPONSE",
-              "STATUS"
-               "Remarks" from USERDATA where "TOKEN_NO" not null and "CURR_DATE"= CURRENT_DATE
-    '''
-
-df_user_data= conn.query(sql=sql)
+sql = '''
+    SELECT 
+        "TOKEN_NO",
+        "CURR_DATE",
+        "PATIENT_NAME",
+        "CURR_CONDITION",
+        "AI_RESPONSE",
+        "STATUS",
+        "Remarks"
+    FROM USERDATA
+    WHERE "TOKEN_NO" IS NOT NULL
+    AND "CURR_DATE" = CURRENT_DATE
+'''
+df_user_data = conn.query(sql=sql)
 st.dataframe(df_user_data)
 
+
+
 # Get user input for selecting a user
-selected_user = st.selectbox("Select user:", data["PATIENT_NAME"])
+selected_user = st.selectbox("Select user:", data_filtered["PATIENT_NAME"])
 
 # Get user input for new status
 status_options = ["Cancel", "Add"]  # Add more options as needed
@@ -36,24 +43,16 @@ if st.button("Insert"):
     if not new_status:
         st.warning("Please select a status.")
     else:
-        # Create a new DataFrame with the new data
-        new_data = pd.DataFrame({
-            "TOKEN_NO": [None],
-            "CURR_DATE": [pd.to_datetime("today").date()],
-            "PATIENT_NAME": [selected_user],
-            "CURR_CONDITION": [None],
-            "AI_RESPONSE": [None],
-            "STATUS": [new_status],
-            "Remarks": [new_remarks]
-        })
-
-        # Append the new data to the original data
-        updated_data = pd.concat([data, new_data], ignore_index=True)
+        # Update the DataFrame locally
+        data.loc[data["PATIENT_NAME"] == selected_user, "STATUS"] = new_status
+        data.loc[data["PATIENT_NAME"] == selected_user, "Remarks"] = new_remarks
 
         # Write the updated data back to Google Sheets
-        conn.session.write(updated_data, worksheet="USERDATA")
+        conn.write(data, worksheet="USERDATA")
+
+        # Display success message
+        st.success("Data inserted successfully!")
 
         # Display updated data
-        st.success("Data inserted successfully!")
         st.write("Updated Data:")
-        st.dataframe(updated_data)
+        st.dataframe(data)
