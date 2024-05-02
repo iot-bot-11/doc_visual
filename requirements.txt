@@ -1,4 +1,4 @@
 pandas
-st-gsheets-connectionconfig
+st-gsheets-connection 0.0.4
 secrets
 config
