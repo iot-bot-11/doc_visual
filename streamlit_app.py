@@ -21,7 +21,6 @@ sql = '''
         "Remarks"
     FROM USERDATA
     WHERE "TOKEN_NO" IS NOT NULL
-    AND "CURR_DATE" = CURRENT_DATE
 '''
 df_user_data = conn.query(sql=sql)
 st.dataframe(df_user_data)
